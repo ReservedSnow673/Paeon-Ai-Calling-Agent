@@ -5,7 +5,7 @@
 
 'use strict';
 
-process.env.OPENAI_API_KEY = process.env.OPENAI_API_KEY || 'sk-test-placeholder';
+process.env.GOOGLE_PROJECT_ID = process.env.GOOGLE_PROJECT_ID || 'test-project';
 process.env.PORT = '0'; // Let OS pick a free port
 
 const http = require('http');

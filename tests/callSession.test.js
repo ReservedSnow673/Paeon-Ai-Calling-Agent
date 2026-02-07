@@ -6,7 +6,7 @@
 
 'use strict';
 
-process.env.OPENAI_API_KEY = process.env.OPENAI_API_KEY || 'sk-test-placeholder';
+process.env.GOOGLE_PROJECT_ID = process.env.GOOGLE_PROJECT_ID || 'test-project';
 
 const { CallSession, STATES: S } = require('../lib/callSession');
 const { linearToMulaw, generateSilence } = require('../lib/audioUtils');
@@ -91,10 +91,10 @@ test('initializes firstTurn as true', () => {
   assert(s.firstTurn === true);
 });
 
-test('uses TTS_VOICE from env or defaults to nova', () => {
+test('initializes lang as null (auto-detect on first turn)', () => {
   const ws = new MockWS();
   const s = new CallSession(ws, 'MZ123', 'CA456');
-  assert(s.voice === (process.env.TTS_VOICE || 'nova'));
+  assert(s.lang === null, `Expected null, got ${s.lang}`);
 });
 
 // ─────────────────────────────────────────────────────────────

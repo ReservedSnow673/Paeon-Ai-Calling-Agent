@@ -6,11 +6,11 @@ Phone-call–based, fully voice-only, multilingual AI medical representative for
 
 ```
 Phone Call (Twilio)
-  → Streaming Speech-to-Text  (OpenAI Whisper, auto language detect)
-  → Translate to English       (GPT-4o-mini)
-  → LLM reasoning              (GPT-4o-mini + injected product docs)
-  → Translate to caller lang   (GPT-4o-mini)
-  → Text-to-Speech             (OpenAI TTS)
+  → Google Cloud Speech-to-Text  (mulaw 8kHz, auto language detect)
+  → Google Cloud Translation     (to English, internal)
+  → Gemini reasoning              (Vertex AI + injected product docs)
+  → Google Cloud Translation     (to caller language)
+  → Google Cloud Text-to-Speech  (mulaw 8kHz, multilingual voices)
   → Audio back to caller
   (loop)
 ```
@@ -22,7 +22,7 @@ Phone Call (Twilio)
 | **Node.js 18+** | Runtime |
 | **ngrok** | Tunnel for Twilio webhooks |
 | **Twilio account** | Phone number + Media Streams |
-| **OpenAI API key** | Whisper, GPT-4o-mini, TTS |
+| **Google Cloud project** | Speech-to-Text, Translation, Vertex AI (Gemini), Text-to-Speech |
 
 ## Quick Start (5 minutes)
 
@@ -41,11 +41,12 @@ cp .env.example .env
 Edit `.env` and fill in:
 
 ```
-OPENAI_API_KEY=sk-...
-TWILIO_ACCOUNT_SID=AC...      # optional, for reference
-TWILIO_AUTH_TOKEN=...          # optional, for reference
+GOOGLE_PROJECT_ID=my-gcp-project
+GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
+GOOGLE_LOCATION=us-central1   # Vertex AI region
+TWILIO_ACCOUNT_SID=AC...
+TWILIO_AUTH_TOKEN=...
 PORT=3000
-TTS_VOICE=nova                 # nova, alloy, shimmer, echo, onyx, fable
 ```
 
 ### 3. Start the server
@@ -85,9 +86,9 @@ Copy the `https://xxxx.ngrok-free.app` URL.
 ```
 ├── server.js              # Express + WebSocket entry point
 ├── lib/
-│   ├── audioUtils.js      # Mulaw ↔ PCM ↔ WAV conversion, VAD
+│   ├── audioUtils.js      # Mulaw codec, VAD energy detection, silence gen
 │   ├── callSession.js     # Per-call state machine & voice pipeline
-│   └── openaiService.js   # OpenAI API calls (STT, LLM, TTS, translate)
+│   └── googleService.js   # Google Cloud API calls (STT, LLM, TTS, translate)
 ├── data/
 │   └── product-info.txt   # Product information (injected into LLM context)
 ├── package.json
@@ -103,11 +104,11 @@ Edit `data/product-info.txt` with your own publicly available product informatio
 
 ### Change the voice
 
-Set `TTS_VOICE` in `.env`. Options: `nova`, `alloy`, `shimmer`, `echo`, `onyx`, `fable`.
+Voices are selected automatically per language in `lib/googleService.js` (the `VOICE_MAP` object). Edit the map to change voices for specific languages. See [Google Cloud TTS voices](https://cloud.google.com/text-to-speech/docs/voices).
 
 ### Add languages
 
-No code change needed — Whisper auto-detects 50+ languages. Translation and TTS are multilingual out of the box.
+No code change needed — Google Cloud Speech-to-Text auto-detects 20+ configured languages. To add more, update `STT_ALT_LANGS` in `lib/googleService.js` and add a voice entry to `VOICE_MAP`.
 
 ### Tune sensitivity
 
@@ -122,7 +123,7 @@ In `lib/callSession.js`, adjust:
 
 ## Supported Languages
 
-English, Hindi, Spanish, French, German, Portuguese, Chinese, Japanese, Korean, Arabic, Russian, Italian, Dutch, Polish, Turkish, Vietnamese, Thai, Bengali, Tamil, Telugu, Marathi, Gujarati, Urdu, Punjabi — and any other language Whisper supports.
+English, Hindi, Spanish, French, German, Portuguese, Chinese, Japanese, Korean, Arabic, Russian, Italian, Bengali, Tamil, Telugu, Gujarati, Marathi, Turkish, Polish, Dutch, Vietnamese, Thai — and more by adding to `STT_ALT_LANGS` and `VOICE_MAP` in `lib/googleService.js`.
 
 ## Failsafe Behavior
 
@@ -135,7 +136,9 @@ English, Hindi, Spanish, French, German, Portuguese, Chinese, Japanese, Korean, 
 
 | API | Cost |
 |-----|------|
-| Whisper | ~$0.006/min |
-| GPT-4o-mini | ~$0.001/turn |
-| TTS | ~$0.015/1K chars |
-| **~5 min call** | **~$0.15–0.25** |
+| Google Cloud STT | ~$0.024/min (enhanced phone model) |
+| Gemini 2.0 Flash | ~$0.001/turn |
+| Google Translation | ~$0.00002/char ($20/M chars) |
+| Google Cloud TTS | ~$0.016/1K chars (Neural2) |
+| Twilio | ~$0.0085/min inbound |
+| **~5 min call** | **~$0.20–0.35** |

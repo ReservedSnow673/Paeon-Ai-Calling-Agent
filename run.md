@@ -7,7 +7,7 @@
 | **Node.js 18+** | [nodejs.org](https://nodejs.org) | Runtime |
 | **ngrok** | `brew install ngrok` or [ngrok.com](https://ngrok.com/download) | Exposes local server to the internet |
 | **Twilio account** | [twilio.com/try-twilio](https://www.twilio.com/try-twilio) | Phone number + media streams |
-| **OpenAI API key** | [platform.openai.com/api-keys](https://platform.openai.com/api-keys) | Whisper, GPT-4o-mini, TTS |
+| **Google Cloud project** | [console.cloud.google.com](https://console.cloud.google.com) | STT, Translation, Vertex AI (Gemini), TTS |
 
 ---
 
@@ -29,14 +29,15 @@ cp .env.example .env
 Open `.env` and fill in your keys:
 
 ```
-OPENAI_API_KEY=sk-proj-...your-key...
+GOOGLE_PROJECT_ID=my-gcp-project-id
+GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account-key.json
+GOOGLE_LOCATION=us-central1
 TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 TWILIO_AUTH_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 PORT=3000
-TTS_VOICE=nova
 ```
 
-> **TTS_VOICE options:** `nova` (female, warm), `alloy` (neutral), `shimmer` (female, bright), `echo` (male), `onyx` (male, deep), `fable` (male, British)
+> **Google Cloud setup:** Create a service account with roles for Speech-to-Text, Translation, Text-to-Speech, and Vertex AI. Download the JSON key and set the path in `GOOGLE_APPLICATION_CREDENTIALS`.
 
 ---
 
@@ -49,7 +50,7 @@ npm start
 You should see:
 
 ```
-[openai] Product info loaded (XXXX chars)
+[google] Product info loaded (XXXX chars)
 
 ╔══════════════════════════════════════════════════════════╗
 ║  Voice AI Medical Rep — PRODUCTION SERVER                ║
@@ -160,8 +161,8 @@ Expected:
 |---------|-------|-----|
 | No sound after connecting | ngrok URL not set in Twilio | Check webhook URL matches ngrok output |
 | "Missing env var" on start | `.env` not configured | Run `cp .env.example .env` and fill in keys |
-| Call connects but AI doesn't respond | OpenAI API key invalid | Verify key at [platform.openai.com](https://platform.openai.com) |
-| Audio is choppy/garbled | Network latency to OpenAI | Ensure stable internet; try wired connection |
+| Call connects but AI doesn't respond | Google Cloud credentials invalid | Verify service account key and project ID |
+| Audio is choppy/garbled | Network latency to Google Cloud | Ensure stable internet; try wired connection |
 | "Stream started" but no audio events | Twilio trial limitations | Verify your Twilio number is voice-enabled |
 | ngrok shows 502 errors | Server not running | Start server first (`npm start`), then ngrok |
 | Caller hears silence for 5+ seconds | First TTS generation is slow (cold start) | Normal on first call — subsequent turns are faster |
@@ -214,7 +215,7 @@ brew install flyctl
 
 # Launch
 fly launch --name voice-ai-med-rep
-fly secrets set OPENAI_API_KEY=sk-...
+fly secrets set GOOGLE_PROJECT_ID=my-project GOOGLE_APPLICATION_CREDENTIALS=/app/service-account.json
 fly deploy
 ```
 
@@ -248,14 +249,12 @@ Phone Call (Twilio)
   └→ Twilio <Connect><Stream> → WebSocket (bidirectional)
        └→ Inbound mulaw audio (8kHz, 8-bit)
             └→ VAD silence detection (1.5s threshold)
-                 └→ mulaw → PCM → WAV
-                      └→ OpenAI Whisper STT (auto language detect)
-                           └→ GPT-4o-mini translate to English
-                                └→ GPT-4o-mini reasoning (grounded in product docs)
-                                     └→ GPT-4o-mini translate to caller language
-                                          └→ OpenAI TTS (24kHz PCM)
-                                               └→ Resample 24→8 kHz (low-pass)
-                                                    └→ mulaw chunks → Twilio → Caller
+                 └→ Google Cloud Speech-to-Text (mulaw, auto language detect)
+                      └→ Google Cloud Translation → English
+                           └→ Gemini 2.0 Flash reasoning (grounded in product docs)
+                                └→ Google Cloud Translation → caller language
+                                     └→ Google Cloud TTS (mulaw 8kHz)
+                                          └→ mulaw chunks → Twilio → Caller
 ```
 
 ---
@@ -264,9 +263,9 @@ Phone Call (Twilio)
 
 | Component | Rate | ~5 min call |
 |-----------|------|-------------|
-| Whisper STT | $0.006/min | $0.03 |
-| GPT-4o-mini | ~$0.001/turn | $0.005 |
-| Translation | ~$0.001/turn | $0.005 |
-| TTS | $0.015/1K chars | $0.08 |
+| Google Cloud STT | $0.024/min (enhanced) | $0.12 |
+| Gemini 2.0 Flash | ~$0.001/turn | $0.005 |
+| Google Translation | $20/M chars | $0.005 |
+| Google Cloud TTS | $0.016/1K chars (Neural2) | $0.08 |
 | Twilio | $0.0085/min inbound | $0.04 |
-| **Total** | | **~$0.15–0.25** |
+| **Total** | | **~$0.20–0.35** |

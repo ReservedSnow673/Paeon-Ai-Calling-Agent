@@ -10,7 +10,7 @@ const path = require('path');
 
 const suites = [
   { name: 'Audio Utilities', file: 'audioUtils.test.js' },
-  { name: 'OpenAI Service',  file: 'openaiService.test.js' },
+  { name: 'Google Service',  file: 'googleService.test.js' },
   { name: 'Call Session',    file: 'callSession.test.js' },
   { name: 'Server (HTTP+WS)', file: 'server.test.js' },
 ];
@@ -31,7 +31,7 @@ for (const suite of suites) {
       cwd: path.join(__dirname, '..'),
       encoding: 'utf-8',
       timeout: 30_000,
-      env: { ...process.env, OPENAI_API_KEY: process.env.OPENAI_API_KEY || 'sk-test-placeholder' },
+      env: { ...process.env, GOOGLE_PROJECT_ID: process.env.GOOGLE_PROJECT_ID || 'test-project' },
     });
     console.log(output);
 
