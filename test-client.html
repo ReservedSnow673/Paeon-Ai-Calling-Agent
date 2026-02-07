@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Voice AI — Browser Test Client</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0f172a; color: #e2e8f0;
+    display: flex; justify-content: center; align-items: center;
+    min-height: 100vh;
+  }
+  .container { width: 420px; text-align: center; }
+  h1 { font-size: 1.4rem; margin-bottom: 4px; }
+  .subtitle { font-size: 0.85rem; color: #94a3b8; margin-bottom: 32px; }
+
+  /* Call button */
+  .call-btn {
+    width: 120px; height: 120px; border-radius: 50%;
+    border: none; cursor: pointer;
+    font-size: 2.8rem; color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 24px;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .call-btn:hover { transform: scale(1.06); }
+  .call-btn.idle { background: #16a34a; box-shadow: 0 0 30px #16a34a55; }
+  .call-btn.active { background: #dc2626; box-shadow: 0 0 30px #dc262655; animation: pulse 1.8s infinite; }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 30px #dc262655; }
+    50% { box-shadow: 0 0 50px #dc2626aa; }
+  }
+
+  /* Status area */
+  .status {
+    font-size: 1rem; min-height: 28px;
+    margin-bottom: 16px; color: #38bdf8;
+  }
+
+  /* Waveform */
+  canvas { border-radius: 8px; margin-bottom: 20px; }
+
+  /* Log */
+  .log-area {
+    background: #1e293b; border-radius: 8px;
+    padding: 12px; max-height: 260px; overflow-y: auto;
+    text-align: left; font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.75rem; line-height: 1.5;
+  }
+  .log-area div { color: #94a3b8; }
+  .log-area .info { color: #38bdf8; }
+  .log-area .sent { color: #4ade80; }
+  .log-area .recv { color: #f59e0b; }
+  .log-area .err { color: #f87171; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🎙️ Voice AI Test Client</h1>
+  <p class="subtitle">No Twilio needed — connects directly via WebSocket</p>
+
+  <button class="call-btn idle" id="callBtn" onclick="toggleCall()">📞</button>
+  <div class="status" id="status">Tap to start a call</div>
+  <canvas id="waveform" width="400" height="64"></canvas>
+  <div class="log-area" id="log"></div>
+</div>
+
+<script>
+// ── Config ──────────────────────────────────────────────────
+const SERVER_PORT = 3000;
+const WS_URL = `ws://${location.hostname}:${SERVER_PORT}/media-stream`;
+const SAMPLE_RATE = 8000;
+const CHUNK_MS    = 20;    // match Twilio's 20ms chunks
+const CHUNK_SIZE  = (SAMPLE_RATE * CHUNK_MS) / 1000; // 160 samples
+
+// ── State ───────────────────────────────────────────────────
+let ws = null;
+let audioCtx = null;
+let micStream = null;
+let scriptNode = null;
+let active = false;
+let streamSid = 'WEB_' + Math.random().toString(36).slice(2, 10);
+
+// Playback queue
+let playbackQueue = [];
+let isPlaying = false;
+let micEnabled = false; // suppress mic until greeting finishes
+let pendingMarks = [];   // marks to echo after audio finishes playing
+
+// ── UI ──────────────────────────────────────────────────────
+const callBtn  = document.getElementById('callBtn');
+const statusEl = document.getElementById('status');
+const logEl    = document.getElementById('log');
+const canvas   = document.getElementById('waveform');
+const canvasCtx = canvas.getContext('2d');
+
+function addLog(text, cls = '') {
+  const d = document.createElement('div');
+  d.className = cls;
+  d.textContent = `[${new Date().toLocaleTimeString()}] ${text}`;
+  logEl.appendChild(d);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function setStatus(text) { statusEl.textContent = text; }
+
+// ── Mulaw codec (matches Twilio's PCMU) ────────────────────
+const MULAW_BIAS = 33;
+const MULAW_MAX  = 32635;
+
+function linearToMulaw(sample) {
+  sample = Math.max(-32768, Math.min(32767, sample));
+  const sign = (sample < 0) ? 0x80 : 0;
+  if (sample < 0) sample = -sample;
+  sample = Math.min(sample + MULAW_BIAS, MULAW_MAX);
+
+  const exp = [0,1,2,3,4,5,6,7].find(e =>
+    sample < (0x84 << e)) ?? 7;
+  const mantissa = (sample >> (exp + 3)) & 0x0F;
+  return ~(sign | (exp << 4) | mantissa) & 0xFF;
+}
+
+function mulawToLinear(byte) {
+  byte = ~byte & 0xFF;
+  const sign = byte & 0x80;
+  const exp  = (byte >> 4) & 0x07;
+  const mantissa = byte & 0x0F;
+  let sample = ((mantissa << 4) + 0x84) << exp;
+  sample -= MULAW_BIAS * 4;
+  return sign ? -sample : sample;
+}
+
+// ── Waveform visualizer ────────────────────────────────────
+let vizData = new Float32Array(128).fill(0);
+
+function drawWaveform() {
+  if (!active) {
+    canvasCtx.fillStyle = '#1e293b';
+    canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+    return;
+  }
+  requestAnimationFrame(drawWaveform);
+
+  canvasCtx.fillStyle = '#1e293b';
+  canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+
+  canvasCtx.strokeStyle = '#38bdf8';
+  canvasCtx.lineWidth = 2;
+  canvasCtx.beginPath();
+
+  const sliceWidth = canvas.width / vizData.length;
+  let x = 0;
+  for (let i = 0; i < vizData.length; i++) {
+    const y = (0.5 + vizData[i] * 0.5) * canvas.height;
+    i === 0 ? canvasCtx.moveTo(x, y) : canvasCtx.lineTo(x, y);
+    x += sliceWidth;
+  }
+  canvasCtx.stroke();
+}
+
+// ── Resampler: 44100/48000 → 8000 Hz ──────────────────────
+function resample(input, fromRate, toRate) {
+  const ratio = fromRate / toRate;
+  const len   = Math.floor(input.length / ratio);
+  const out   = new Float32Array(len);
+  for (let i = 0; i < len; i++) {
+    const srcIdx = i * ratio;
+    const idx    = Math.floor(srcIdx);
+    const frac   = srcIdx - idx;
+    const a = input[idx] || 0;
+    const b = input[idx + 1] || 0;
+    out[i] = a + frac * (b - a);  // linear interpolation
+  }
+  return out;
+}
+
+// ── Toggle call ────────────────────────────────────────────
+async function toggleCall() {
+  if (active) {
+    endCall();
+  } else {
+    await startCall();
+  }
+}
+
+// ── Start call ─────────────────────────────────────────────
+async function startCall() {
+  try {
+    addLog('Requesting microphone...', 'info');
+
+    // Get mic
+    micStream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true, sampleRate: SAMPLE_RATE }
+    });
+    const micRate = micStream.getAudioTracks()[0].getSettings().sampleRate || 48000;
+    addLog(`Mic opened at ${micRate} Hz`, 'info');
+
+    // Audio context for mic capture + playback
+    audioCtx = new AudioContext({ sampleRate: micRate });
+
+    // Connect WebSocket
+    streamSid = 'WEB_' + Math.random().toString(36).slice(2, 10);
+    addLog(`Connecting to ${WS_URL}`, 'info');
+    ws = new WebSocket(WS_URL);
+    
+    ws.onopen = () => {
+      addLog('WebSocket connected', 'info');
+      active = true;
+      callBtn.className = 'call-btn active';
+      callBtn.textContent = '📵';
+      setStatus('🔴 Call active — speak now');
+      drawWaveform();
+
+      // Send Twilio-style handshake
+      ws.send(JSON.stringify({ event: 'connected', protocol: 'Call', version: '1.0.0' }));
+      addLog('→ connected', 'sent');
+
+      // Send start event
+      ws.send(JSON.stringify({
+        event: 'start',
+        streamSid: streamSid,
+        start: {
+          streamSid: streamSid,
+          callSid: 'CA_browser_' + Date.now().toString(36),
+          customParameters: { callerNumber: '+0000000000' },
+          mediaFormat: { encoding: 'audio/x-mulaw', sampleRate: '8000', channels: '1' }
+        }
+      }));
+      addLog('→ start', 'sent');
+      setStatus('🔊 AI greeting... please wait');
+
+      // Start mic capture but suppress sending until greeting finishes
+      micEnabled = false;
+      startMicCapture(micRate);
+
+      // Safety: enable mic after 8s even if mark never arrives (e.g. TTS error)
+      setTimeout(() => {
+        if (!micEnabled && active) {
+          micEnabled = true;
+          setStatus('🎤 Listening... speak now');
+          addLog('Mic enabled (timeout fallback)', 'info');
+        }
+      }, 8000);
+    };
+
+    ws.onmessage = (evt) => {
+      const data = JSON.parse(evt.data);
+      
+      if (data.event === 'media' && data.media?.payload) {
+        // Decode mulaw → PCM → play
+        const raw = atob(data.media.payload);
+        const mulaw = new Uint8Array(raw.length);
+        for (let i = 0; i < raw.length; i++) mulaw[i] = raw.charCodeAt(i);
+        queuePlayback(mulaw);
+      }
+      else if (data.event === 'mark') {
+        addLog(`← mark: ${data.mark?.name}`, 'recv');
+        // Don't echo immediately — queue it for when audio actually finishes playing
+        pendingMarks.push(data.mark.name);
+      }
+      else if (data.event === 'clear') {
+        addLog('← clear (AI interrupted)', 'recv');
+        playbackQueue = [];
+      }
+    };
+
+    ws.onclose = () => {
+      addLog('WebSocket closed', 'info');
+      endCall();
+    };
+
+    ws.onerror = (e) => {
+      addLog(`WebSocket error: ${e.message || 'connection failed'}`, 'err');
+      endCall();
+    };
+
+  } catch (err) {
+    addLog(`Error: ${err.message}`, 'err');
+    endCall();
+  }
+}
+
+// ── Mic capture → mulaw → send ─────────────────────────────
+function startMicCapture(micRate) {
+  const source = audioCtx.createMediaStreamSource(micStream);
+  // ScriptProcessor for raw PCM access (AudioWorklet is overkill for a test tool)
+  const bufSize = 4096;
+  scriptNode = audioCtx.createScriptProcessor(bufSize, 1, 1);
+
+  scriptNode.onaudioprocess = (e) => {
+    if (!active || !ws || ws.readyState !== 1) return;
+    if (!micEnabled) return; // suppress until greeting finishes
+
+    const input = e.inputBuffer.getChannelData(0);
+    
+    // Update visualizer
+    const step = Math.floor(input.length / vizData.length);
+    for (let i = 0; i < vizData.length; i++) {
+      vizData[i] = input[i * step] || 0;
+    }
+
+    // ── Noise gate: compute RMS energy, skip quiet frames ──
+    // Browser mics pick up ambient noise that exceeds the server's
+    // energy threshold (180). We gate here so only actual speech
+    // reaches the server. Mulaw silence byte (0xFF) is sent for
+    // quiet frames to keep the stream alive without triggering
+    // the server's VAD.
+    let sumSq = 0;
+    for (let i = 0; i < input.length; i++) sumSq += input[i] * input[i];
+    const rms = Math.sqrt(sumSq / input.length);
+    // rms is in float range 0..1; server expects mulaw RMS ~180+ for speech.
+    // Float RMS 0.01 ≈ mulaw RMS ~200, so gate at 0.008.
+    const NOISE_GATE = 0.008;
+
+    // Resample to 8kHz
+    const resampled = resample(input, micRate, SAMPLE_RATE);
+
+    if (rms < NOISE_GATE) {
+      // Send silence frames (mulaw 0xFF = silence) to keep stream alive
+      const silenceChunk = new Uint8Array(CHUNK_SIZE).fill(0xFF);
+      const b64 = btoa(String.fromCharCode(...silenceChunk));
+      ws.send(JSON.stringify({
+        event: 'media', streamSid,
+        media: { payload: b64 }
+      }));
+      return;
+    }
+
+    // Convert float → 16-bit PCM → mulaw, send in 160-byte chunks
+    const mulawBuf = new Uint8Array(resampled.length);
+    for (let i = 0; i < resampled.length; i++) {
+      const s16 = Math.max(-32768, Math.min(32767, Math.round(resampled[i] * 32767)));
+      mulawBuf[i] = linearToMulaw(s16);
+    }
+
+    // Send in 160-sample chunks (20ms at 8kHz), matching Twilio
+    for (let i = 0; i < mulawBuf.length; i += CHUNK_SIZE) {
+      const chunk = mulawBuf.slice(i, Math.min(i + CHUNK_SIZE, mulawBuf.length));
+      const b64 = btoa(String.fromCharCode(...chunk));
+      ws.send(JSON.stringify({
+        event: 'media',
+        streamSid: streamSid,
+        media: { payload: b64, timestamp: Date.now().toString(), chunk: String(i / CHUNK_SIZE) }
+      }));
+    }
+  };
+
+  source.connect(scriptNode);
+  scriptNode.connect(audioCtx.destination); // needed for onaudioprocess to fire
+}
+
+// ── Playback: mulaw → speaker ──────────────────────────────
+function queuePlayback(mulawBytes) {
+  playbackQueue.push(mulawBytes);
+  if (!isPlaying) drainPlayback();
+}
+
+async function drainPlayback() {
+  if (!audioCtx || playbackQueue.length === 0) { isPlaying = false; return; }
+  isPlaying = true;
+
+  // Merge all queued chunks
+  let total = 0;
+  for (const c of playbackQueue) total += c.length;
+  const merged = new Uint8Array(total);
+  let offset = 0;
+  for (const c of playbackQueue) { merged.set(c, offset); offset += c.length; }
+  playbackQueue = [];
+
+  // Decode mulaw → float32 at 8kHz
+  const pcm = new Float32Array(merged.length);
+  for (let i = 0; i < merged.length; i++) {
+    pcm[i] = mulawToLinear(merged[i]) / 32768;
+  }
+
+  // Upsample 8kHz → audioCtx.sampleRate for playback
+  const playRate = audioCtx.sampleRate;
+  const upsampled = resample(pcm, SAMPLE_RATE, playRate);
+
+  const buf = audioCtx.createBuffer(1, upsampled.length, playRate);
+  buf.getChannelData(0).set(upsampled);
+
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf;
+  src.connect(audioCtx.destination);
+  src.start();
+  setStatus('🔊 AI speaking...');
+  src.onended = () => {
+    if (playbackQueue.length > 0) { drainPlayback(); }
+    else {
+      isPlaying = false;
+      // NOW echo any pending marks — audio has actually played through the speaker
+      while (pendingMarks.length > 0) {
+        const name = pendingMarks.shift();
+        if (ws && ws.readyState === 1) {
+          ws.send(JSON.stringify({ event: 'mark', streamSid, mark: { name } }));
+          addLog(`→ echo mark: ${name}`, 'sent');
+        }
+        // Enable mic after first mark playback
+        if (!micEnabled) {
+          micEnabled = true;
+          addLog('Audio done — mic enabled', 'info');
+        }
+      }
+      if (active) setStatus('🎤 Listening... speak now');
+    }
+  };
+}
+
+// ── End call ───────────────────────────────────────────────
+function endCall() {
+  active = false;
+  callBtn.className = 'call-btn idle';
+  callBtn.textContent = '📞';
+  setStatus('Call ended — tap to call again');
+  drawWaveform(); // clear waveform
+
+  if (ws && ws.readyState === 1) {
+    ws.send(JSON.stringify({ event: 'stop', streamSid, stop: { callSid: 'CA_browser' } }));
+    ws.close();
+  }
+  ws = null;
+
+  if (scriptNode) { scriptNode.disconnect(); scriptNode = null; }
+  if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+  if (audioCtx) { audioCtx.close(); audioCtx = null; }
+
+  playbackQueue = [];
+  isPlaying = false;
+}
+</script>
+</body>
+</html>

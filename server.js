@@ -31,7 +31,8 @@ const activeSessions = new Map();   // streamSid → CallSession
 
 // ── Express app ──────────────────────────────────────────────
 
-const app = express();
+const path = require('path');
+const app  = express();
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
@@ -41,6 +42,15 @@ app.use((req, _res, next) => {
     console.log(`→ ${req.method} ${req.path}`);
   }
   next();
+});
+
+/**
+ * Browser test client — no Twilio needed.
+ * Open http://localhost:3000/test in a browser, click the call button,
+ * and speak into your mic.
+ */
+app.get('/test', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'test-client.html'));
 });
 
 /**
