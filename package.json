@@ -8,7 +8,7 @@
     "dev": "node --watch server.js",
     "test": "node tests/run-all.js",
     "test:audio": "node tests/audioUtils.test.js",
-    "test:openai": "node tests/openaiService.test.js",
+    "test:google": "node tests/googleService.test.js",
     "test:session": "node tests/callSession.test.js",
     "test:server": "node tests/server.test.js"
   },
