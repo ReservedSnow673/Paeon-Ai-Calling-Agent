@@ -15,7 +15,7 @@ const { CallSession } = require('./lib/callSession');
 
 // ── Validate environment ─────────────────────────────────────
 
-const REQUIRED_ENV = ['OPENAI_API_KEY'];
+const REQUIRED_ENV = ['GOOGLE_PROJECT_ID'];
 for (const key of REQUIRED_ENV) {
   if (!process.env[key]) {
     console.error(`FATAL: Missing env var ${key} — copy .env.example → .env`);
