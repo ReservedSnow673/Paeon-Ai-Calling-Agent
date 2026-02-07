@@ -1,0 +1,186 @@
+================================================================
+PRODUCT: NEXAVIR (azetromycin phosphate) — Injection, 50 mg/mL
+Marketed by: Zenith BioTherapeutics, Inc.
+================================================================
+
+APPROVED INDICATION
+-------------------
+Nexavir is indicated for the treatment of moderate-to-severe
+rheumatoid arthritis (RA) in adults who have had an inadequate
+response or intolerance to one or more conventional disease-
+modifying antirheumatic drugs (DMARDs).
+
+MECHANISM OF ACTION
+-------------------
+Azetromycin phosphate is a selective Janus kinase 1 (JAK1)
+inhibitor. It works by blocking the JAK1-mediated signaling
+pathway, which reduces the production of pro-inflammatory
+cytokines including IL-6, IL-12, and IL-23. By targeting JAK1
+selectively, Nexavir reduces systemic inflammation while
+minimizing effects on JAK2, JAK3, and TYK2 pathways.
+
+DOSAGE AND ADMINISTRATION
+-------------------------
+• Recommended dose: 50 mg subcutaneous injection once weekly.
+• Nexavir is supplied as a pre-filled syringe (50 mg/mL).
+• Can be administered by the patient at home after training.
+• If a dose is missed, administer as soon as possible within
+  3 days of the missed dose, then resume regular schedule.
+• Do not administer two doses within 3 days of each other.
+
+CLINICAL TRIAL DATA (NEXAVIR-RA1)
+----------------------------------
+Trial design: Phase III, randomized, double-blind, placebo-
+controlled, 52-week study in 1,200 adults with moderate-to-
+severe RA.
+
+Primary endpoint: ACR20 response at Week 24.
+  • Nexavir 50 mg: 68% achieved ACR20 (p < 0.001 vs placebo)
+  • Placebo: 32% achieved ACR20
+
+Key secondary endpoints at Week 24:
+  • ACR50: Nexavir 45% vs Placebo 15%
+  • ACR70: Nexavir 22% vs Placebo 5%
+  • DAS28-CRP < 2.6 (remission): Nexavir 28% vs Placebo 6%
+  • HAQ-DI improvement ≥ 0.22: Nexavir 62% vs Placebo 33%
+
+DIFFERENTIATION vs OTHER THERAPIES
+------------------------------------
+• Compared to non-selective JAK inhibitors (e.g., tofacitinib):
+  Nexavir's selective JAK1 inhibition may result in a more
+  favorable safety profile regarding hematologic effects.
+• Compared to biologic DMARDs (e.g., adalimumab, etanercept):
+  Nexavir is administered subcutaneously once weekly (vs
+  biweekly or monthly for some biologics) and does not require
+  cold-chain storage.
+• Compared to methotrexate: Nexavir demonstrated superiority
+  as monotherapy in ACR20 response in the NEXAVIR-RA1 trial
+  subgroup analysis (62% vs 48%, p = 0.01).
+• Oral JAK inhibitors require daily dosing; Nexavir is once
+  weekly subcutaneous.
+
+SAFETY — IMPORTANT WARNINGS
+----------------------------
+• Serious infections: Increased risk of serious infections
+  including tuberculosis, invasive fungal infections, and
+  opportunistic infections. Do not initiate during active
+  serious infection. Screen for TB before starting.
+• Malignancy: Lymphoma and other malignancies have been
+  observed. Consider risks vs benefits.
+• Thrombosis: Deep venous thrombosis and pulmonary embolism
+  have been reported. Use with caution in patients with
+  thrombosis risk factors.
+• Laboratory monitoring: Check CBC, liver enzymes, and lipid
+  profile at baseline and periodically during treatment.
+  Interrupt treatment if ANC < 1000 cells/mm³ or ALC < 500
+  cells/mm³.
+• Hepatic effects: ALT/AST elevations reported. Not
+  recommended in severe hepatic impairment.
+
+COMMON ADVERSE REACTIONS (≥ 5% in clinical trials)
+---------------------------------------------------
+Upper respiratory tract infections (12%), headache (8%),
+nausea (7%), injection site reactions (6%), elevated
+cholesterol (5%).
+
+CONTRAINDICATIONS
+-----------------
+• Known hypersensitivity to azetromycin phosphate or any
+  excipient.
+• Active serious infection.
+• Severe hepatic impairment (Child-Pugh C).
+
+DRUG INTERACTIONS
+-----------------
+• Strong CYP3A4 inhibitors (e.g., ketoconazole): may increase
+  azetromycin exposure; dose adjustment not required but
+  monitor closely.
+• Avoid concomitant use with other JAK inhibitors or biologic
+  DMARDs.
+• May be used concomitantly with methotrexate or conventional
+  DMARDs.
+• Live vaccines: avoid during treatment. Update vaccinations
+  before initiating Nexavir.
+
+STORAGE
+-------
+Store at 2°C to 8°C (36°F to 46°F). Do not freeze.
+Protect from light. Once removed from refrigeration, may be
+kept at room temperature (up to 25°C / 77°F) for up to 14 days.
+Discard if left at room temperature for more than 14 days.
+
+================================================================
+INSURANCE & REIMBURSEMENT INFORMATION
+================================================================
+
+COVERAGE STATUS
+---------------
+• Nexavir is covered by most major commercial health plans.
+• Listed on the formulary (Tier 3 — Specialty) of the
+  following plans: Aetna, UnitedHealthcare, Cigna, BCBS
+  major plans, Humana.
+• Medicare Part B: Covered when administered by a healthcare
+  provider. Buy-and-bill available.
+• Medicare Part D: Covered as a specialty pharmacy benefit
+  for self-administered doses.
+
+PRIOR AUTHORIZATION
+-------------------
+Most payers require prior authorization. Typical criteria:
+1. Confirmed diagnosis of moderate-to-severe RA.
+2. Inadequate response to at least one conventional DMARD
+   (e.g., methotrexate) for ≥ 3 months.
+3. Documented by a rheumatologist.
+Step therapy: some plans require trial and failure of one
+TNF inhibitor before approving Nexavir.
+
+AVERAGE WHOLESALE PRICE (AWP)
+-----------------------------
+• Nexavir 50 mg/mL pre-filled syringe: $1,850 per syringe.
+• Estimated annual cost (52 weekly doses): ~$96,200.
+
+PATIENT SUPPORT — NEXAVIR ACCESS PROGRAM
+-----------------------------------------
+Zenith BioTherapeutics offers the following patient support:
+
+1. Co-pay Assistance Card
+   - Eligible commercially insured patients may pay as little
+     as $0 per dose.
+   - Maximum annual benefit: $15,000.
+   - Not valid for patients on government insurance (Medicare,
+     Medicaid, Tricare).
+
+2. Patient Assistance Program (PAP)
+   - For uninsured or underinsured patients.
+   - Income threshold: ≤ 400% Federal Poverty Level.
+   - Provides Nexavir at no cost if eligible.
+
+3. Nurse Navigator Service
+   - Dedicated nurse available to help with injection training,
+     side-effect management, and treatment adherence.
+   - Phone: 1-800-555-NEXAVIR (1-800-555-6392)
+   - Available Mon–Fri, 8 AM – 8 PM ET.
+
+4. Quick-Start Program
+   - Free first dose provided while insurance approval is
+     pending (bridge supply).
+   - Requires HCP attestation of medical necessity.
+
+HOW TO ENROLL
+-------------
+• Fax enrollment form to: 1-800-555-6393
+• Online: www.nexavir-access.com
+• Phone: 1-800-555-NEXAVIR
+
+================================================================
+PRESCRIBING INFORMATION REFERENCE
+================================================================
+Full prescribing information is available at:
+www.nexavir.com/prescribing-info
+
+NDA #: 215XXX
+Approval date: March 2024
+Manufactured by: Zenith BioTherapeutics, Inc., Cambridge, MA
+
+This material is intended for US healthcare professionals only.
+================================================================
