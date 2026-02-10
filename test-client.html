@@ -3,121 +3,313 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Voice AI — Browser Test Client</title>
+<title>Voice AI — Test Client</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: #0f172a; color: #e2e8f0;
-    display: flex; justify-content: center; align-items: center;
-    min-height: 100vh;
+  :root {
+    --bg: #f8f9fb;
+    --surface: #ffffff;
+    --surface-2: #f1f3f5;
+    --border: #e2e5ea;
+    --text-primary: #1a1d21;
+    --text-secondary: #5f6368;
+    --text-muted: #9aa0a8;
+    --accent: #2563eb;
+    --accent-light: #eff4ff;
+    --green: #16a34a;
+    --green-light: #f0fdf4;
+    --red: #dc2626;
+    --red-light: #fef2f2;
+    --amber: #d97706;
+    --amber-light: #fffbeb;
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+    --radius: 16px;
+    --radius-sm: 10px;
   }
-  .container { width: 420px; text-align: center; }
-  h1 { font-size: 1.4rem; margin-bottom: 4px; }
-  .subtitle { font-size: 0.85rem; color: #94a3b8; margin-bottom: 32px; }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .container { width: 460px; padding: 32px; }
+
+  /* Header */
+  .header { text-align: center; margin-bottom: 36px; }
+  .header .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .brand-icon {
+    width: 36px; height: 36px;
+    background: var(--accent);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .brand-icon svg { color: #fff; }
+  .header h1 {
+    font-size: 1.25rem; font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .header p {
+    font-size: 0.8rem; color: var(--text-muted); font-weight: 400;
+  }
+
+  /* Card */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+  }
+
+  .call-section {
+    padding: 32px 24px;
+    display: flex; flex-direction: column;
+    align-items: center; gap: 20px;
+  }
 
   /* Call button */
   .call-btn {
-    width: 120px; height: 120px; border-radius: 50%;
+    width: 80px; height: 80px; border-radius: 50%;
     border: none; cursor: pointer;
-    font-size: 2.8rem; color: #fff;
     display: flex; align-items: center; justify-content: center;
-    margin: 0 auto 24px;
-    transition: transform 0.15s, box-shadow 0.15s;
+    transition: all 0.2s ease;
+    position: relative;
   }
-  .call-btn:hover { transform: scale(1.06); }
-  .call-btn.idle { background: #16a34a; box-shadow: 0 0 30px #16a34a55; }
-  .call-btn.active { background: #dc2626; box-shadow: 0 0 30px #dc262655; animation: pulse 1.8s infinite; }
-  @keyframes pulse {
-    0%, 100% { box-shadow: 0 0 30px #dc262655; }
-    50% { box-shadow: 0 0 50px #dc2626aa; }
+  .call-btn svg { width: 28px; height: 28px; color: #fff; }
+  .call-btn:active { transform: scale(0.95); }
+
+  .call-btn.idle {
+    background: var(--green);
+    box-shadow: 0 4px 16px rgba(22,163,74,0.3);
+  }
+  .call-btn.idle:hover {
+    box-shadow: 0 6px 20px rgba(22,163,74,0.4);
+    transform: translateY(-1px);
+  }
+  .call-btn.active {
+    background: var(--red);
+    box-shadow: 0 4px 16px rgba(220,38,38,0.3);
+  }
+  .call-btn.active:hover {
+    box-shadow: 0 6px 20px rgba(220,38,38,0.4);
+    transform: translateY(-1px);
+  }
+  .call-btn.active::before {
+    content: '';
+    position: absolute;
+    width: 100%; height: 100%;
+    border-radius: 50%;
+    border: 2px solid var(--red);
+    animation: ring-pulse 2s ease-out infinite;
+  }
+  @keyframes ring-pulse {
+    0% { transform: scale(1); opacity: 0.5; }
+    100% { transform: scale(1.6); opacity: 0; }
   }
 
-  /* Status area */
-  .status {
-    font-size: 1rem; min-height: 28px;
-    margin-bottom: 16px; color: #38bdf8;
+  /* Status badge */
+  .status-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 14px; border-radius: 20px;
+    font-size: 0.78rem; font-weight: 500;
+    transition: all 0.3s ease;
+  }
+  .status-badge.idle { background: var(--surface-2); color: var(--text-muted); }
+  .status-badge.listening { background: var(--green-light); color: var(--green); }
+  .status-badge.speaking { background: var(--accent-light); color: var(--accent); }
+  .status-badge.waiting { background: var(--amber-light); color: var(--amber); }
+  .status-badge.ended { background: var(--red-light); color: var(--red); }
+
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%; background: currentColor;
+  }
+  .status-badge.listening .status-dot,
+  .status-badge.speaking .status-dot {
+    animation: dot-blink 1.2s ease-in-out infinite;
+  }
+  @keyframes dot-blink {
+    0%, 100% { opacity: 1; } 50% { opacity: 0.3; }
   }
 
   /* Waveform */
-  canvas { border-radius: 8px; margin-bottom: 20px; }
+  .waveform-wrap { width: 100%; padding: 0 4px; }
+  canvas {
+    width: 100%; height: 56px;
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+  }
+
+  .divider { height: 1px; background: var(--border); }
 
   /* Log */
-  .log-area {
-    background: #1e293b; border-radius: 8px;
-    padding: 12px; max-height: 260px; overflow-y: auto;
-    text-align: left; font-family: 'SF Mono', 'Fira Code', monospace;
-    font-size: 0.75rem; line-height: 1.5;
+  .log-section { padding: 16px; }
+  .log-header {
+    display: flex; align-items: center;
+    justify-content: space-between; margin-bottom: 10px;
   }
-  .log-area div { color: #94a3b8; }
-  .log-area .info { color: #38bdf8; }
-  .log-area .sent { color: #4ade80; }
-  .log-area .recv { color: #f59e0b; }
-  .log-area .err { color: #f87171; }
+  .log-header span {
+    font-size: 0.7rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--text-muted);
+  }
+  .log-clear {
+    font-size: 0.65rem; color: var(--text-muted);
+    background: none; border: none; cursor: pointer;
+    padding: 2px 6px; border-radius: 4px;
+    font-family: inherit; transition: all 0.15s;
+  }
+  .log-clear:hover { background: var(--surface-2); color: var(--text-secondary); }
+
+  .log-area {
+    max-height: 200px; overflow-y: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem; line-height: 1.7;
+    scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+  }
+  .log-area::-webkit-scrollbar { width: 4px; }
+  .log-area::-webkit-scrollbar-track { background: transparent; }
+  .log-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .log-area .entry {
+    display: flex; gap: 8px; padding: 1px 0;
+    animation: log-in 0.2s ease;
+  }
+  @keyframes log-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .log-area .ts { color: var(--text-muted); flex-shrink: 0; }
+  .log-area .msg { color: var(--text-secondary); }
+  .log-area .msg.info { color: var(--accent); }
+  .log-area .msg.sent { color: var(--green); }
+  .log-area .msg.recv { color: var(--amber); }
+  .log-area .msg.err { color: var(--red); }
+  .log-empty {
+    text-align: center; padding: 20px;
+    color: var(--text-muted); font-size: 0.72rem;
+    font-family: 'Inter', sans-serif;
+  }
+  .footer {
+    text-align: center; margin-top: 16px;
+    font-size: 0.7rem; color: var(--text-muted);
+  }
 </style>
 </head>
 <body>
 <div class="container">
-  <h1>🎙️ Voice AI Test Client</h1>
-  <p class="subtitle">No Twilio needed — connects directly via WebSocket</p>
+  <div class="header">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/>
+        </svg>
+      </div>
+      <h1>Voice AI</h1>
+    </div>
+    <p>Browser test client &mdash; direct WebSocket connection</p>
+  </div>
 
-  <button class="call-btn idle" id="callBtn" onclick="toggleCall()">📞</button>
-  <div class="status" id="status">Tap to start a call</div>
-  <canvas id="waveform" width="400" height="64"></canvas>
-  <div class="log-area" id="log"></div>
+  <div class="card">
+    <div class="call-section">
+      <button class="call-btn idle" id="callBtn" onclick="toggleCall()">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+        </svg>
+      </button>
+
+      <div class="status-badge idle" id="statusBadge">
+        <span class="status-dot"></span>
+        <span id="statusText">Tap to start a call</span>
+      </div>
+
+      <div class="waveform-wrap">
+        <canvas id="waveform" width="800" height="112"></canvas>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="log-section">
+      <div class="log-header">
+        <span>Activity Log</span>
+        <button class="log-clear" onclick="clearLog()">Clear</button>
+      </div>
+      <div class="log-area" id="log">
+        <div class="log-empty">No activity yet</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">ws://localhost:3000/media-stream</div>
 </div>
 
 <script>
-// ── Config ──────────────────────────────────────────────────
+const ICON_PHONE = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`;
+const ICON_HANGUP = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.11 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/><line x1="2" y1="2" x2="22" y2="22"/></svg>`;
+
 const SERVER_PORT = 3000;
 const WS_URL = `ws://${location.hostname}:${SERVER_PORT}/media-stream`;
 const SAMPLE_RATE = 8000;
-const CHUNK_MS    = 20;    // match Twilio's 20ms chunks
-const CHUNK_SIZE  = (SAMPLE_RATE * CHUNK_MS) / 1000; // 160 samples
+const CHUNK_MS = 20;
+const CHUNK_SIZE = (SAMPLE_RATE * CHUNK_MS) / 1000;
 
-// ── State ───────────────────────────────────────────────────
-let ws = null;
-let audioCtx = null;
-let micStream = null;
-let scriptNode = null;
-let active = false;
-let streamSid = 'WEB_' + Math.random().toString(36).slice(2, 10);
+let ws = null, audioCtx = null, micStream = null, scriptNode = null;
+let active = false, streamSid = '';
+let playbackQueue = [], isPlaying = false;
+let micEnabled = false, pendingMarks = [];
 
-// Playback queue
-let playbackQueue = [];
-let isPlaying = false;
-let micEnabled = false; // suppress mic until greeting finishes
-let pendingMarks = [];   // marks to echo after audio finishes playing
-
-// ── UI ──────────────────────────────────────────────────────
-const callBtn  = document.getElementById('callBtn');
-const statusEl = document.getElementById('status');
-const logEl    = document.getElementById('log');
-const canvas   = document.getElementById('waveform');
+const callBtn = document.getElementById('callBtn');
+const statusBadge = document.getElementById('statusBadge');
+const statusText = document.getElementById('statusText');
+const logEl = document.getElementById('log');
+const canvas = document.getElementById('waveform');
 const canvasCtx = canvas.getContext('2d');
 
+function setStatus(text, state) {
+  statusText.textContent = text;
+  statusBadge.className = `status-badge ${state}`;
+}
+
 function addLog(text, cls = '') {
+  const empty = logEl.querySelector('.log-empty');
+  if (empty) empty.remove();
   const d = document.createElement('div');
-  d.className = cls;
-  d.textContent = `[${new Date().toLocaleTimeString()}] ${text}`;
+  d.className = 'entry';
+  const ts = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  d.innerHTML = `<span class="ts">${ts}</span><span class="msg ${cls}">${text}</span>`;
   logEl.appendChild(d);
   logEl.scrollTop = logEl.scrollHeight;
 }
 
-function setStatus(text) { statusEl.textContent = text; }
+function clearLog() {
+  logEl.innerHTML = '<div class="log-empty">No activity yet</div>';
+}
 
-// ── Mulaw codec (matches Twilio's PCMU) ────────────────────
-const MULAW_BIAS = 33;
-const MULAW_MAX  = 32635;
+// ── Mulaw codec ─────────────────────────────────────────────
+const MULAW_BIAS = 33, MULAW_MAX = 32635;
 
 function linearToMulaw(sample) {
   sample = Math.max(-32768, Math.min(32767, sample));
   const sign = (sample < 0) ? 0x80 : 0;
   if (sample < 0) sample = -sample;
   sample = Math.min(sample + MULAW_BIAS, MULAW_MAX);
-
-  const exp = [0,1,2,3,4,5,6,7].find(e =>
-    sample < (0x84 << e)) ?? 7;
+  const exp = [0,1,2,3,4,5,6,7].find(e => sample < (0x84 << e)) ?? 7;
   const mantissa = (sample >> (exp + 3)) & 0x0F;
   return ~(sign | (exp << 4) | mantissa) & 0xFF;
 }
@@ -125,260 +317,217 @@ function linearToMulaw(sample) {
 function mulawToLinear(byte) {
   byte = ~byte & 0xFF;
   const sign = byte & 0x80;
-  const exp  = (byte >> 4) & 0x07;
+  const exp = (byte >> 4) & 0x07;
   const mantissa = byte & 0x0F;
   let sample = ((mantissa << 4) + 0x84) << exp;
   sample -= MULAW_BIAS * 4;
   return sign ? -sample : sample;
 }
 
-// ── Waveform visualizer ────────────────────────────────────
+// ── Waveform ────────────────────────────────────────────────
 let vizData = new Float32Array(128).fill(0);
+const W = canvas.width, H = canvas.height;
 
 function drawWaveform() {
   if (!active) {
-    canvasCtx.fillStyle = '#1e293b';
-    canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+    canvasCtx.fillStyle = '#f1f3f5';
+    canvasCtx.fillRect(0, 0, W, H);
+    canvasCtx.strokeStyle = '#d5d9df';
+    canvasCtx.lineWidth = 1;
+    canvasCtx.beginPath();
+    canvasCtx.moveTo(0, H / 2);
+    canvasCtx.lineTo(W, H / 2);
+    canvasCtx.stroke();
     return;
   }
   requestAnimationFrame(drawWaveform);
+  canvasCtx.fillStyle = '#f1f3f5';
+  canvasCtx.fillRect(0, 0, W, H);
 
-  canvasCtx.fillStyle = '#1e293b';
-  canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+  const grad = canvasCtx.createLinearGradient(0, 0, W, 0);
+  grad.addColorStop(0, '#2563eb');
+  grad.addColorStop(0.5, '#7c3aed');
+  grad.addColorStop(1, '#2563eb');
 
-  canvasCtx.strokeStyle = '#38bdf8';
+  canvasCtx.strokeStyle = grad;
   canvasCtx.lineWidth = 2;
+  canvasCtx.lineJoin = 'round';
   canvasCtx.beginPath();
-
-  const sliceWidth = canvas.width / vizData.length;
+  const slice = W / vizData.length;
   let x = 0;
   for (let i = 0; i < vizData.length; i++) {
-    const y = (0.5 + vizData[i] * 0.5) * canvas.height;
+    const y = (0.5 + vizData[i] * 0.45) * H;
     i === 0 ? canvasCtx.moveTo(x, y) : canvasCtx.lineTo(x, y);
-    x += sliceWidth;
+    x += slice;
   }
   canvasCtx.stroke();
-}
 
-// ── Resampler: 44100/48000 → 8000 Hz ──────────────────────
+  canvasCtx.globalAlpha = 0.08;
+  canvasCtx.strokeStyle = grad;
+  canvasCtx.beginPath();
+  x = 0;
+  for (let i = 0; i < vizData.length; i++) {
+    const y = H - (0.5 + vizData[i] * 0.45) * H;
+    i === 0 ? canvasCtx.moveTo(x, y) : canvasCtx.lineTo(x, y);
+    x += slice;
+  }
+  canvasCtx.stroke();
+  canvasCtx.globalAlpha = 1;
+}
+drawWaveform();
+
 function resample(input, fromRate, toRate) {
   const ratio = fromRate / toRate;
-  const len   = Math.floor(input.length / ratio);
-  const out   = new Float32Array(len);
+  const len = Math.floor(input.length / ratio);
+  const out = new Float32Array(len);
   for (let i = 0; i < len; i++) {
     const srcIdx = i * ratio;
-    const idx    = Math.floor(srcIdx);
-    const frac   = srcIdx - idx;
-    const a = input[idx] || 0;
-    const b = input[idx + 1] || 0;
-    out[i] = a + frac * (b - a);  // linear interpolation
+    const idx = Math.floor(srcIdx);
+    const frac = srcIdx - idx;
+    out[i] = (input[idx] || 0) + frac * ((input[idx + 1] || 0) - (input[idx] || 0));
   }
   return out;
 }
 
-// ── Toggle call ────────────────────────────────────────────
 async function toggleCall() {
-  if (active) {
-    endCall();
-  } else {
-    await startCall();
-  }
+  if (active) endCall();
+  else await startCall();
 }
 
-// ── Start call ─────────────────────────────────────────────
 async function startCall() {
   try {
-    addLog('Requesting microphone...', 'info');
-
-    // Get mic
+    addLog('Requesting microphone access', 'info');
     micStream = await navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: true, noiseSuppression: true, sampleRate: SAMPLE_RATE }
     });
     const micRate = micStream.getAudioTracks()[0].getSettings().sampleRate || 48000;
-    addLog(`Mic opened at ${micRate} Hz`, 'info');
-
-    // Audio context for mic capture + playback
+    addLog(`Microphone opened at ${micRate} Hz`, 'info');
     audioCtx = new AudioContext({ sampleRate: micRate });
 
-    // Connect WebSocket
     streamSid = 'WEB_' + Math.random().toString(36).slice(2, 10);
-    addLog(`Connecting to ${WS_URL}`, 'info');
+    addLog('Connecting to server', 'info');
     ws = new WebSocket(WS_URL);
-    
+
     ws.onopen = () => {
       addLog('WebSocket connected', 'info');
       active = true;
       callBtn.className = 'call-btn active';
-      callBtn.textContent = '📵';
-      setStatus('🔴 Call active — speak now');
+      callBtn.innerHTML = ICON_HANGUP;
+      setStatus('Greeting...', 'waiting');
       drawWaveform();
 
-      // Send Twilio-style handshake
       ws.send(JSON.stringify({ event: 'connected', protocol: 'Call', version: '1.0.0' }));
-      addLog('→ connected', 'sent');
-
-      // Send start event
       ws.send(JSON.stringify({
-        event: 'start',
-        streamSid: streamSid,
+        event: 'start', streamSid,
         start: {
-          streamSid: streamSid,
+          streamSid,
           callSid: 'CA_browser_' + Date.now().toString(36),
           customParameters: { callerNumber: '+0000000000' },
           mediaFormat: { encoding: 'audio/x-mulaw', sampleRate: '8000', channels: '1' }
         }
       }));
-      addLog('→ start', 'sent');
-      setStatus('🔊 AI greeting... please wait');
+      addLog('Stream started', 'sent');
 
-      // Start mic capture but suppress sending until greeting finishes
       micEnabled = false;
       startMicCapture(micRate);
 
-      // Safety: enable mic after 8s even if mark never arrives (e.g. TTS error)
       setTimeout(() => {
         if (!micEnabled && active) {
           micEnabled = true;
-          setStatus('🎤 Listening... speak now');
-          addLog('Mic enabled (timeout fallback)', 'info');
+          setStatus('Listening', 'listening');
+          addLog('Mic enabled (timeout)', 'info');
         }
       }, 8000);
     };
 
     ws.onmessage = (evt) => {
       const data = JSON.parse(evt.data);
-      
       if (data.event === 'media' && data.media?.payload) {
-        // Decode mulaw → PCM → play
         const raw = atob(data.media.payload);
         const mulaw = new Uint8Array(raw.length);
         for (let i = 0; i < raw.length; i++) mulaw[i] = raw.charCodeAt(i);
         queuePlayback(mulaw);
+        if (active) setStatus('AI speaking', 'speaking');
       }
       else if (data.event === 'mark') {
-        addLog(`← mark: ${data.mark?.name}`, 'recv');
-        // Don't echo immediately — queue it for when audio actually finishes playing
         pendingMarks.push(data.mark.name);
       }
       else if (data.event === 'clear') {
-        addLog('← clear (AI interrupted)', 'recv');
+        addLog('Playback cleared', 'recv');
         playbackQueue = [];
       }
     };
 
-    ws.onclose = () => {
-      addLog('WebSocket closed', 'info');
-      endCall();
-    };
-
-    ws.onerror = (e) => {
-      addLog(`WebSocket error: ${e.message || 'connection failed'}`, 'err');
-      endCall();
-    };
-
+    ws.onclose = () => { addLog('Connection closed', 'info'); endCall(); };
+    ws.onerror = () => { addLog('Connection failed', 'err'); endCall(); };
   } catch (err) {
     addLog(`Error: ${err.message}`, 'err');
     endCall();
   }
 }
 
-// ── Mic capture → mulaw → send ─────────────────────────────
 function startMicCapture(micRate) {
   const source = audioCtx.createMediaStreamSource(micStream);
-  // ScriptProcessor for raw PCM access (AudioWorklet is overkill for a test tool)
-  const bufSize = 4096;
-  scriptNode = audioCtx.createScriptProcessor(bufSize, 1, 1);
+  scriptNode = audioCtx.createScriptProcessor(4096, 1, 1);
 
   scriptNode.onaudioprocess = (e) => {
-    if (!active || !ws || ws.readyState !== 1) return;
-    if (!micEnabled) return; // suppress until greeting finishes
+    if (!active || !ws || ws.readyState !== 1 || !micEnabled) return;
 
     const input = e.inputBuffer.getChannelData(0);
-    
-    // Update visualizer
     const step = Math.floor(input.length / vizData.length);
-    for (let i = 0; i < vizData.length; i++) {
-      vizData[i] = input[i * step] || 0;
-    }
+    for (let i = 0; i < vizData.length; i++) vizData[i] = input[i * step] || 0;
 
-    // ── Noise gate: compute RMS energy, skip quiet frames ──
-    // Browser mics pick up ambient noise that exceeds the server's
-    // energy threshold (180). We gate here so only actual speech
-    // reaches the server. Mulaw silence byte (0xFF) is sent for
-    // quiet frames to keep the stream alive without triggering
-    // the server's VAD.
     let sumSq = 0;
     for (let i = 0; i < input.length; i++) sumSq += input[i] * input[i];
     const rms = Math.sqrt(sumSq / input.length);
-    // rms is in float range 0..1; server expects mulaw RMS ~180+ for speech.
-    // Float RMS 0.01 ≈ mulaw RMS ~200, so gate at 0.008.
-    const NOISE_GATE = 0.008;
 
-    // Resample to 8kHz
     const resampled = resample(input, micRate, SAMPLE_RATE);
 
-    if (rms < NOISE_GATE) {
-      // Send silence frames (mulaw 0xFF = silence) to keep stream alive
-      const silenceChunk = new Uint8Array(CHUNK_SIZE).fill(0xFF);
-      const b64 = btoa(String.fromCharCode(...silenceChunk));
-      ws.send(JSON.stringify({
-        event: 'media', streamSid,
-        media: { payload: b64 }
-      }));
+    if (rms < 0.008) {
+      const sil = new Uint8Array(CHUNK_SIZE).fill(0xFF);
+      const b64 = btoa(String.fromCharCode(...sil));
+      ws.send(JSON.stringify({ event: 'media', streamSid, media: { payload: b64 } }));
       return;
     }
 
-    // Convert float → 16-bit PCM → mulaw, send in 160-byte chunks
     const mulawBuf = new Uint8Array(resampled.length);
     for (let i = 0; i < resampled.length; i++) {
       const s16 = Math.max(-32768, Math.min(32767, Math.round(resampled[i] * 32767)));
       mulawBuf[i] = linearToMulaw(s16);
     }
 
-    // Send in 160-sample chunks (20ms at 8kHz), matching Twilio
     for (let i = 0; i < mulawBuf.length; i += CHUNK_SIZE) {
       const chunk = mulawBuf.slice(i, Math.min(i + CHUNK_SIZE, mulawBuf.length));
       const b64 = btoa(String.fromCharCode(...chunk));
-      ws.send(JSON.stringify({
-        event: 'media',
-        streamSid: streamSid,
-        media: { payload: b64, timestamp: Date.now().toString(), chunk: String(i / CHUNK_SIZE) }
-      }));
+      ws.send(JSON.stringify({ event: 'media', streamSid, media: { payload: b64 } }));
     }
   };
 
   source.connect(scriptNode);
-  scriptNode.connect(audioCtx.destination); // needed for onaudioprocess to fire
+  scriptNode.connect(audioCtx.destination);
 }
 
-// ── Playback: mulaw → speaker ──────────────────────────────
 function queuePlayback(mulawBytes) {
   playbackQueue.push(mulawBytes);
   if (!isPlaying) drainPlayback();
 }
 
-async function drainPlayback() {
+function drainPlayback() {
   if (!audioCtx || playbackQueue.length === 0) { isPlaying = false; return; }
   isPlaying = true;
 
-  // Merge all queued chunks
   let total = 0;
   for (const c of playbackQueue) total += c.length;
   const merged = new Uint8Array(total);
-  let offset = 0;
-  for (const c of playbackQueue) { merged.set(c, offset); offset += c.length; }
+  let off = 0;
+  for (const c of playbackQueue) { merged.set(c, off); off += c.length; }
   playbackQueue = [];
 
-  // Decode mulaw → float32 at 8kHz
   const pcm = new Float32Array(merged.length);
-  for (let i = 0; i < merged.length; i++) {
-    pcm[i] = mulawToLinear(merged[i]) / 32768;
-  }
+  for (let i = 0; i < merged.length; i++) pcm[i] = mulawToLinear(merged[i]) / 32768;
 
-  // Upsample 8kHz → audioCtx.sampleRate for playback
   const playRate = audioCtx.sampleRate;
   const upsampled = resample(pcm, SAMPLE_RATE, playRate);
-
   const buf = audioCtx.createBuffer(1, upsampled.length, playRate);
   buf.getChannelData(0).set(upsampled);
 
@@ -386,49 +535,43 @@ async function drainPlayback() {
   src.buffer = buf;
   src.connect(audioCtx.destination);
   src.start();
-  setStatus('🔊 AI speaking...');
+
   src.onended = () => {
-    if (playbackQueue.length > 0) { drainPlayback(); }
-    else {
-      isPlaying = false;
-      // NOW echo any pending marks — audio has actually played through the speaker
-      while (pendingMarks.length > 0) {
-        const name = pendingMarks.shift();
-        if (ws && ws.readyState === 1) {
-          ws.send(JSON.stringify({ event: 'mark', streamSid, mark: { name } }));
-          addLog(`→ echo mark: ${name}`, 'sent');
-        }
-        // Enable mic after first mark playback
-        if (!micEnabled) {
-          micEnabled = true;
-          addLog('Audio done — mic enabled', 'info');
-        }
+    if (playbackQueue.length > 0) { drainPlayback(); return; }
+    isPlaying = false;
+    while (pendingMarks.length > 0) {
+      const name = pendingMarks.shift();
+      if (ws && ws.readyState === 1) {
+        ws.send(JSON.stringify({ event: 'mark', streamSid, mark: { name } }));
       }
-      if (active) setStatus('🎤 Listening... speak now');
+      if (!micEnabled) {
+        micEnabled = true;
+        addLog('Greeting finished — mic active', 'info');
+      }
     }
+    if (active) setStatus('Listening', 'listening');
   };
 }
 
-// ── End call ───────────────────────────────────────────────
 function endCall() {
   active = false;
   callBtn.className = 'call-btn idle';
-  callBtn.textContent = '📞';
-  setStatus('Call ended — tap to call again');
-  drawWaveform(); // clear waveform
+  callBtn.innerHTML = ICON_PHONE;
+  setStatus('Call ended', 'ended');
+  drawWaveform();
 
   if (ws && ws.readyState === 1) {
     ws.send(JSON.stringify({ event: 'stop', streamSid, stop: { callSid: 'CA_browser' } }));
     ws.close();
   }
   ws = null;
-
   if (scriptNode) { scriptNode.disconnect(); scriptNode = null; }
   if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
   if (audioCtx) { audioCtx.close(); audioCtx = null; }
+  playbackQueue = []; isPlaying = false;
+  micEnabled = false; pendingMarks = [];
 
-  playbackQueue = [];
-  isPlaying = false;
+  setTimeout(() => { if (!active) setStatus('Tap to start a call', 'idle'); }, 3000);
 }
 </script>
 </body>
